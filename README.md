@@ -1,13 +1,13 @@
 # Classroom Reservation System
 
 In our institute, managing and reserving classrooms for academics and various functions has traditionally been a time-consuming process, involving phone calls and manual effort. This often results in 50% of classrooms being constantly occupied while the remaining 40% remain empty. Such inefficiencies not only waste the faculty's and students' time but also disrupt the scheduling of classes and events. To address these challenges, we have developed a comprehensive Classroom Reservation System.
-![Classroom homepage](img/Homepage.jpg)
+![Classroom homepage](img/Homepage.png)
 
 
 ## Introduction
 
 Our application streamlines the process of reserving classrooms, preventing scheduling conflicts, and optimizing classroom usage. It consists of three key models: the User model, the Admin model, and the Communication model. Let's explore how our system can benefit both faculty and students.
-![Classroom homepage](img/process%20work%20plan.png)
+![Classroom homepage](img/process%20work%20plan.jpg)
 ## Key Features
 
 ### 1. Easy Reservation
