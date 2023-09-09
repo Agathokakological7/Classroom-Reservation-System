@@ -1,7 +1,7 @@
 # Classroom Reservation System
 
 In our institute, managing and reserving classrooms for academics and various functions has traditionally been a time-consuming process, involving phone calls and manual effort. This often results in 50% of classrooms being constantly occupied while the remaining 40% remain empty. Such inefficiencies not only waste the faculty's and students' time but also disrupt the scheduling of classes and events. To address these challenges, we have developed a comprehensive Classroom Reservation System.
-![Classroom homepage](img/Homepage.png)
+![Classroom homepage](img/Homepage.jpg)
 
 
 ## Introduction
