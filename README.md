@@ -7,7 +7,7 @@ In our institute, managing and reserving classrooms for academics and various fu
 ## Introduction
 
 Our application streamlines the process of reserving classrooms, preventing scheduling conflicts, and optimizing classroom usage. It consists of three key models: the User model, the Admin model, and the Communication model. Let's explore how our system can benefit both faculty and students.
-
+![Classroom homepage](img/process%20work%20plan.png)
 ## Key Features
 
 ### 1. Easy Reservation
