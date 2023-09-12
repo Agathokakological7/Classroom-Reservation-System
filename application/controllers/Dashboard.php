@@ -1,5 +1,5 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
-use PHPMailer\PHPMailer\PHPMailer;
+
 class Dashboard extends CI_Controller {
 	public function __construct(){
 		parent::__construct();
@@ -7,101 +7,365 @@ class Dashboard extends CI_Controller {
 
 		
 	}
-	public function index(){
-		$this->load->helper('url');
-		$this->load->database();
-		$this->load->model('Inserting_model');
-		$data['room_type'] = $this->Inserting_model->room_type();
-		$data['capacity'] = $this->Inserting_model->seating_capacity();
+	public function index($each_rm_name='')
+    {   
+        $this->load->database();
+        $this->load->model('Inserting_model');
+        $this->load->model('Aedr_model');
+     $this->load->helper('url');
+     
 
-		$this->load->view('users\request_form',$data);
+        ////////////////  preload page data //////////////////////
+        $data['room_types']=$this->Aedr_model->get_row_by_id('room_type','room_type_id');   
 
-	}
-	public function dashboard($each_rm_name='')
-	{	
-		$this->load->database();
-		if($this->session->userdata('user')){
+        $data['search_data']=array();
+     $data['search_result']=array();
 
-		$current_date = @date('Y-m-d');
-		$data['each_rm']=$each_rm_name;
-		echo "<script>console.log('select_room_type	: " . $each_rm_name. "' );</script>";		
+     $data['class_room_details']=array();
+     $data['hall_details']=array();
 
-		$this->db->distinct();
-		$this->db->select('room_name');
-		$this->db->from('academic_classroom_booking');
-		$this->db->where('"'.$current_date.'" BETWEEN from_date AND to_date');
-		$acadamic_booked = $this->db->get()->result_array();
+        //////////  page data start /////////////////
+
+
+     
+
+ 
+
+     ///////// Insert the request ////////////
+
+
+     if($each_rm_name!='')
+     {
+
+         /////////////// Date formatte converter //////////////////
+
+         //print_r($_POST);exit;
+         
+         $mysql_converter = new DateTime($this->input->post('from_date_time'));
+         $search_data['from_date']= $mysql_converter->format('Y-m-d H:i:s');
+
+         $mysql_converter = new DateTime($this->input->post('to_date_time'));
+         $search_data['to_date'] = $mysql_converter->format('Y-m-d H:i:s');
+         $search_data['room_type']=$this->input->post('room_type');
+         echo "<script>console.log('Anuj 11111' );</script>";       
+
+         $search_result=$this->room_search($search_data['from_date'],$search_data['to_date'],$search_data['room_type']);
+         echo "<script>console.log('Anuj 2222' );</script>";        
+
+
+       //  print_r($search_result);exit;
+
+         $data['search_data']=$search_data;
+         
+         $data['search_result']=$search_result;
+
+
+
+
+
+         if($search_data['room_type']==5)
+                 {
+                      $sql="select * from class_room where status=1";
+                      echo "<script>console.log('Anuj 22223' );</script>";      
+
+                      $data['class_room_details']=$this->Aedr_model->get_result_sql_search_class_room();
+                      echo "<script>console.log('Anuj 4444' );</script>";       
+
+                 }
+         else
+         {
+                     $sql="select * from room_info where status=1";
+                      $data['hall_details']=$this->Aedr_model->get_result_sql_search_room_info();
+         }
+
+         
+
+
+        
+             
+     }
+     $data['room_typess']=$this->Inserting_model->room_type();
+        if($this->session->userdata('user')){
+            ////////////// evaluate percentage between date and time ////////
+
+            $data['sf_date'] = $this->input->post("select_from_date");
+            $data['st_date'] = $this->input->post("select_to_date");
+    
+
+        ///////////
+
+        $current_date = @date('Y-m-d');
+        $data['each_rm']=$each_rm_name;
+        echo "<script>console.log('select_room_type : " . $each_rm_name. "' );</script>";       
+
+        $this->db->distinct();
+        $this->db->select('room_name');
+        $this->db->from('academic_classroom_booking');
+        $this->db->where('"'.$current_date.'" BETWEEN from_date AND to_date');
+        $acadamic_booked = $this->db->get()->result_array();
         $acadamic_booked = count($acadamic_booked);
 
-		$this->db->distinct();
-		$this->db->select('allocated_room_name');
-		$this->db->from('form');
-		$this->db->where('("'.$current_date.'" BETWEEN f_date AND t_date) AND approval="approved"');
-		$req_booked = $this->db->get()->result_array();
+        $this->db->distinct();
+        $this->db->select('allocated_room_name');
+        $this->db->from('form');
+        $this->db->where('("'.$current_date.'" BETWEEN f_date AND t_date) AND approval="approved"');
+        $req_booked = $this->db->get()->result_array();
         $req_booked = count($req_booked);
 
-		$this->db->select('allocated_room_name');
-		$this->db->from('form');
-		$this->db->where('approval !="approved"');
-		$no_of_req = $this->db->get()->result_array();
+        $this->db->select('allocated_room_name');
+        $this->db->from('form');
+        $this->db->where('approval !="approved"');
+        $no_of_req = $this->db->get()->result_array();
         $data['no_of_req'] = count($no_of_req);
-		
-		$this->db->select('room_name');
-		$this->db->from('room_info');
-		$tot_rm = $this->db->get()->result_array();
-      	$data['tot_rm'] = count($tot_rm);
+        
+        $this->db->select('room_name');
+        $this->db->from('room_info');
+        $tot_rm = $this->db->get()->result_array();
+        $data['tot_rm'] = count($tot_rm);
 
-		echo "<script>console.log('booked room	: " .$date['no_of_req']. "' );</script>";
 
+        $user_info = $this->session->userdata('user');      
+        $data['faculty_data'] = $this->db->get_where('login_account', array('email' => $user_info))->row();     
+        echo "<script>console.log('booked room  : " .$date['no_of_req']. "' );</script>";
+        //echo "<script>console.log('bookehrlhbbsdkhfbsdkbd room    : " .$this->session->userdata('user'). "' );</script>";
+        //echo "<script>console.log('bookehrlhbbsdkhfbsdkbd room    : " .$user_infos. "' );</script>";
+        
 
         //total rooms
         
         //un booked
-		$data['total_booked'] = $req_booked + $acadamic_booked;
+        $data['total_booked'] = $req_booked + $acadamic_booked;
         $un_booked = $data['tot_rm'] - $data['total_booked'] ;
         $data['un_booked'] = $un_booked;
+
+        
+
+        $this->load->model('Inserting_model');
+        $data['time_per'] = $this->Inserting_model->time_percent($select_date);
+
+        $this->load->helper('url');
+        $this->load->view('Admin_1/Templates/style_script');
+        $this->load->view('Admin_1/Templates/navbar');
+        $this->load->view('Admin_1/Templates/side_bar');
+        $this->load->view('Admin_1/dashboard',$data);
+        $this->load->view('Admin_1/Templates/java_script');
+        }
+        else{
+            redirect('Login');
+
+        }
+        
+    }
+
+
+
+
+
+	public function import_room($param1='')
+	{
 		
-		$this->load->model('Inserting_model');
-		$data['time_per'] = $this->Inserting_model->time_percent();
+		//////////  page data start /////////////////
+		$this->load->model('Aedr_model');
+
+
+		$sql="select * from class_room";
+
+        $data['class_room_details']=$this->Aedr_model->get_result_sql($sql);
+
+
+        $sql="select * from room_info";
+
+        $data['hall_details']=$this->Aedr_model->get_result_sql($sql);
+
+        $data['block_by_id']=$this->Aedr_model->get_row_by_id('block_name','block_name_id');
+
+        $data['floor_by_id']=$this->Aedr_model->get_row_by_id('floor','floor_id');
+        $data['room_type_by_id']=$this->Aedr_model->get_row_by_id('room_type','room_type_id');
+
+
+        //////////  page data end /////////////////
+
+      /*  $class_room1=$data['class_room_details'][1];
+
+       // print_r($class_room1['block_id']);exit;
+        echo "<br>";
+        echo "*********<br>";
+      //  print_r($floor_by_id[$class_room1['floor_id']]['floor_name']);exit;*/
+
 
 		$this->load->helper('url');
 		$this->load->view('Admin_1/Templates/style_script');
 		$this->load->view('Admin_1/Templates/navbar');
 		$this->load->view('Admin_1/Templates/side_bar');
-		$this->load->view('Admin_1/dashboard',$data);
+		$this->load->view('Admin_1/import_class_room',$data);
 		$this->load->view('Admin_1/Templates/java_script');
-		}
-		else{
-			redirect('Login');
-
-		}
 		
-	}
+	}	
 
-public function method1($param1="")
-    {
-     
-      echo $param1;
-
-
-
-    }
+	   
+public function bulk_booking($param1='')
+{
 	
-	public function open_form()
+	//////////  page data start /////////////////
+	$this->load->model('Aedr_model');
+
+
+	$sql="select * from class_room";
+
+	$data['class_room_details']=$this->Aedr_model->get_result_sql($sql);
+
+
+	$sql="select * from room_info";
+
+	$data['hall_details']=$this->Aedr_model->get_result_sql($sql);
+
+	$data['block_by_id']=$this->Aedr_model->get_row_by_id('block_name','block_name_id');
+
+	$data['floor_by_id']=$this->Aedr_model->get_row_by_id('floor','floor_id');
+	$data['room_type_by_id']=$this->Aedr_model->get_row_by_id('room_type','room_type_id');
+
+
+	//////////  page data end /////////////////
+
+  /*  $class_room1=$data['class_room_details'][1];
+
+   // print_r($class_room1['block_id']);exit;
+	echo "<br>";
+	echo "*********<br>";
+  //  print_r($floor_by_id[$class_room1['floor_id']]['floor_name']);exit;*/
+
+
+	$this->load->helper('url');
+	$this->load->view('Admin_1/Templates/style_script');
+	$this->load->view('Admin_1/Templates/navbar');
+	$this->load->view('Admin_1/Templates/side_bar');
+	$this->load->view('Admin_1/bulk_booking',$data);
+	$this->load->view('Admin_1/Templates/java_script');
+	
+}   
+
+	public function open_form($param1='')
 	{
+		
 		$this->load->database();  
 	   	$this->load->model('Inserting_model');
-		$data['room_type'] = $this->Inserting_model->room_type();
-		$data['capacity'] = $this->Inserting_model->seating_capacity();
-
+	   	$this->load->model('Aedr_model');
 		$this->load->helper('url');
+		
+
+	   	////////////////  preload page data //////////////////////
+	   	$data['room_types']=$this->Aedr_model->get_row_by_id('room_type','room_type_id');	
+
+	   	$data['search_data']=array();
+		$data['search_result']=array();
+
+		$data['class_room_details']=array();
+		$data['hall_details']=array();
+
+	   	//////////  page data start /////////////////
+
+
+		
+
+	
+
+		///////// Insert the request ////////////
+
+
+		if($param1!='')
+		{
+
+			/////////////// Date formatte converter //////////////////
+
+			//print_r($_POST);exit;
+			
+			$mysql_converter = new DateTime($this->input->post('from_date_time'));
+			$search_data['from_date']= $mysql_converter->format('Y-m-d H:i:s');
+
+			$mysql_converter = new DateTime($this->input->post('to_date_time'));
+			$search_data['to_date'] = $mysql_converter->format('Y-m-d H:i:s');
+			$search_data['room_type']=$this->input->post('room_type');
+			echo "<script>console.log('Anuj 11111' );</script>";		
+
+		    $search_result=$this->room_search($search_data['from_date'],$search_data['to_date'],$search_data['room_type']);
+			echo "<script>console.log('Anuj 2222' );</script>";		
+
+
+		  //  print_r($search_result);exit;
+
+		    $data['search_data']=$search_data;
+			
+		    $data['search_result']=$search_result;
+
+
+
+
+
+		    if($search_data['room_type']==5)
+		    		{
+		     		    $sql="select * from class_room where status=1";
+						 echo "<script>console.log('Anuj 22223' );</script>";		
+
+		     		    $data['class_room_details']=$this->Aedr_model->get_result_sql_search_class_room();
+						 echo "<script>console.log('Anuj 4444' );</script>";		
+
+		    		}
+		    else
+		    {
+		    	        $sql="select * from room_info where status=1";
+		     		    $data['hall_details']=$this->Aedr_model->get_result_sql_search_room_info();
+		    }
+
+            
+
+
+		   
+				
+	    }
+		$data['room_typess']=$this->Inserting_model->room_type();	
+
+		
 		$this->load->view('Admin_1/Templates/style_script');
 		$this->load->view('Admin_1/Templates/navbar');
 		$this->load->view('Admin_1/Templates/side_bar');
-		$this->load->view('Admin_1/form',$data);
+		$this->load->view('Admin_1/book_room1',$data);
 		$this->load->view('Admin_1/Templates/java_script');
 				
 	}
+	function room_search($date1='',$date2='',$room_type='')
+	{
+
+		$sql="SELECT * FROM booking WHERE room_type=$room_type and from_date >= '$date1' AND to_date <= '$date2'";
+		echo "<script>console.log('".$date1.",".$date2.",".$room_type."' );</script>";		
+
+		$result=$this->Aedr_model->get_result_sql_form($room_type,$date1,$date2);
+		echo "<script>console.log('Anuj 1155511' );</script>";		
+
+		//print_r($sql);exit;
+
+		if(!empty($result))
+		{
+				$allotted_room=array();
+			foreach ($result->result() as $rst) {
+				echo "<script>console.log('Anuj 1156511' );</script>";		
+
+				array_push($allotted_room,$rst->room_id);
+			}
+			echo "<script>console.log('Anuj srry	' );</script>";		
+
+			return $allotted_room;
+		}
+		else
+		{
+			echo "<script>console.log('Anuj nune' );</script>";		
+
+			return NULL;
+		}
+		
+
+	}
+
+
 	public function open_table($param1='')
 	{
 
@@ -127,6 +391,34 @@ public function method1($param1="")
 
     $this->load->view('Admin_1/pop_up_table',$data);
 }
+
+
+public function room_pop_up()
+{
+	$this->load->database();  
+	$this->load->helper('url');
+	$id = $this->input->post("id");
+	$data['room_profiles'] = $this->db->get_where('room_info', array('id' => $id))->row();
+
+    $this->load->view('Admin_1/pop_up_table',$data);
+}
+public function form_pop_up()
+{
+	$this->load->database();  
+	$this->load->helper('url');
+
+	$user_info = $this->session->userdata('user');	
+	$data['faculty_data'] = $this->db->get_where('login_account', array('email' => $user_info))->row();
+
+	$id = $this->input->post("id");
+	$data['room_profiles'] = $this->db->get_where('room_info', array('id' => $id))->row();
+
+	$f_date = $this->input->post("date1");
+	echo "<script>console.log('select_room_typegg	: " . $f_date. "' );</script>";		
+
+    $this->load->view('Admin_1/pop_up_form',$data);
+}
+
 	public function admin_allocation()
 	{
 
@@ -297,14 +589,12 @@ public function method1($param1="")
 		$name = $this->input->post('user');
 		echo "<script>console.log('Debug Objects:' );</script>";
 
-		if ($name='faculty'){
-			$person_name = $this->input->post('faculty_name');
-			$person_id = $this->input->post('faculty_id');
-		}
-		else{
-			$person_name = $this->input->post('Student_name');
-			$person_id = $this->input->post('Student_id');
-		};
+		$user_info = $this->session->userdata('user');		
+		$faculty_data = $this->db->get_where('login_account', array('email' => $user_info))->row();
+
+		$person_name = $faculty_data->faculty_name;
+		$person_id = $faculty_data->faculty_id;
+		$email = $faculty_data->email;
 
 		$events = $this->input->post('proposal');
 		if ($events =="Others"){
@@ -341,7 +631,7 @@ public function method1($param1="")
         $data = array(  
                         'name'     => $person_name,
 						'person_id'     => $person_id,
-						'email'     => $this->input->post('email'),						
+						'email'     => $email,						
 						'capacity'     => $this->input->post('capacity'),
 						'room_type'     => $this->input->post('room_type'),
 						'proposal'     => $this->input->post('proposal'),
@@ -565,124 +855,4 @@ public function method1($param1="")
 
 	}
 
-
-	// public function send_email(){
-	// 	$this->load->helper('url');
-	// 	echo "<script>console.log('snfkjbjkdjkdtar:' );</script>";
-
-
-	// 	$name = $this->input->post('name');
-	// 	$email = $this->input->post('email');
-	// 	$subject = $this->input->post('subject');
-	// 	$message = $this->input->post('message');
-
-	// 	$from_address = "mohankumar.ct21@bitsathy.ac.in";//Sender email
-	// 	$to_address = "srikanth.ct21@bitsathy.ac.in";//Receiver email
-	// 	$body = "<html>
-	// 				<style>
-	// 					table,th,td{
-	// 						border-collapse:collapse;
-	// 						border:1px solid black;
-	// 					}
-	// 				</style>
-	// 				<body>
-	// 					<p>Someone has contacted you!</p>
-	// 					<br><br>
-	// 					<h3>Sender Details<h3><br>
-	// 					<table>
-	// 						<tr>
-	// 							<th>Name</th>
-	// 							<th>Email</th>
-	// 							<th>Message</th>
-	// 						</tr>
-	// 						<tr>
-	// 							<td>".$name."</td>
-	// 							<td>".$email."</td>
-	// 							<td>".$message."</td>
-	// 						</tr>
-	// 					</table>
-	// 				</body>
-	// 			</html>";
-	// 	echo "<script>console.log('snfkjbjkdjkdtar:' );</script>";
-	// 	echo "<script>console.log('snfkjbjkdjkdtar:' );</script>";
-	// 	$this->load->view('Admin_1/contact_form.php');
-
-	// 	$mailer = new PHPMailer(true);
-	// 	try{
-	// 		echo "<script>console.log('mmmm:' );</script>";
-
-	// 		$mailer->isSMTP();
-	// 		$mailer->Host="localhost";
-	// 		$mailer->SMTPAuth =true;
-	// 		$mailer->Username="mohankumar.ct21@bitsathy.ac.in";
-	// 		$mailer->Password="etm@9597737255";
-	// 		$mailer->SMTPSecure=PHPMailer::ENCRYPTION_SMTPS;
-	// 		$mailer->Port="443";
-	// 		$mailer->setFrom($from_address);
-	// 		$mailer->addAddress($to_address);
-	// 		$mailer->Subject=$subject;
-	// 		$mailer->isHTML(true);
-	// 		$mailer->Body=$body;
-	// 		$mailer->send();
-	// 		echo "Mail has been sent";
-	// 	}catch(Exception $e){
-	// 		echo "<script>console.log('err:' );</script>";
-
-	// 		echo "Mail Error:".$mailer->ErrorInfo;
-	// 	}
-		
-	// 	echo "<script>console.log('snfkjbjkdjkdtar:' );</script>";
-
-
-	// }
-
-	public  function send_mail(){
-		
-		
-		$this->load->library("email");
-		// $config = array(
-		// 	'protocol'=>'smtp',
-		// 	'smtp_host'=>'localhost',
-			
-		// 	'smtp_port'=>25,
-		// 	'smtp_user'=>'mohankumar.ct21@bitsathy.ac.in'
-		// 	'smtp_pass'=>'etm@9597737255',
-		// 	'charset'=>'utf-8',
-		// 	'mailtype'=>'html',
-		// 	'wordwrap' => TRUE,
-		// 	'newline'=>"\r\n"
-		// );
-		$to_email = "srikanth.ct21@bitsathy.ac.in";
-        $subject = "Simple Email Test via PHP";
-		$body = "Hi, This is test email send by PHP Script";
-		$headers = "From: mohankumar.ct21@bitsathy.ac.in";
-
-		if (mail($to_email, $subject, $body, $headers))
-		 {
-    		echo "Email successfully sent to $to_email...";
-		} 
-		else 
-		{
-    		echo "Email sending failed...";
-		}
-
-		
-		// $this->email->initialize($config);
-		// $this->email->set_newline("\r\n");
-		// $this->email->set_crlf("\r\n");
-
-		// $this->email->to("srikanth.ct12@bitsathy.ac.in");
-		// $this->email->from("info@gophp.in");
-		// $this->email->subject("test email");
-		// $this->email->message("----------nothing--------------");
-		// if ($this->email->send()){
-		// 	echo "mail sent successfully";
-		// }
-		// else{
-		// 	echo "sorry ";
-		// 	print_r($this->email->print_debugger());
-		// }
-
-	}
 }
-

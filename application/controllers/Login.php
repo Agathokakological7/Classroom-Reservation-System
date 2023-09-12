@@ -10,14 +10,13 @@ class Login extends CI_Controller {
 
     }
 
-
         public function index($invalid = ''){
             //load session library
             $this->load->library('session');
             
             //restrict users to go back to login if session has been set
             if($this->session->userdata('user')){
-                redirect('Dashboard/dashboard');
+                redirect('Dashboard/index');
             }
             else{
                 if ($invalid == 1){
@@ -43,11 +42,16 @@ class Login extends CI_Controller {
             echo "<script>console.log('Debug Objects: " . $password. "' );</script>";
 
      
-            $data = $this->Inserting_model->login($email, $password);
+            $data = $this->Inserting_model->admin_login($email, $password);
+            $user_data = $this->Inserting_model->user_login($email, $password);
      
             if($data){
-                $this->session->set_userdata('user', $data);
-                redirect('Dashboard/dashboard');
+                $this->session->set_userdata('user', $email);
+                redirect('Dashboard/index');
+            }
+            elseif ($user_data){
+                $this->session->set_userdata('user', $email);
+                redirect('Dashboard_user/index');
             }
             else{
                 redirect('Login/index/1');
