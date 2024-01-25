@@ -35,7 +35,7 @@ Our application features a notification system that sends emails to the administ
 One of the additional benefits of our application is its ability to provide insights into room usage. It displays how much time each classroom, auditorium, and seminar hall is used. This information includes the proportion and total number of hours each room was used each month. This data helps the scheduling team optimize room allocation and infrastructure planning.
 ![Classroom details](img/classroom%20details.png)
 
-### 6. Time and Stress Savings
+### 6. Time Savings
 
 In summary, our web application is designed to save users time and reduce the stress associated with reserving classrooms. It simplifies the entire process, from requesting rooms to approval and usage analytics.
 
